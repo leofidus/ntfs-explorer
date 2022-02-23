@@ -50,14 +50,15 @@ MainWindow := Window {
         list-view := ListView {
             for todo in file-model:  Rectangle {
                 height: 18px;
+                
+                Rectangle {
+                    background: touch.has-hover ? #f2f1f8 : white;
+                    width: parent.width;
+                    height: 17px;
+                    animate background { duration: 50ms; easing: ease-in-out; }
+                }
                 HorizontalLayout {
                     width: parent.width - 8px;
-                    Rectangle {
-                        background: #193076;
-                        width: todo.selected ? parent.width : 0;
-                        height: 8px;
-                        opacity: 0.1;
-                    }
                     Text {
                         text: todo.name;
                         color: todo.is_directory ? green : black;
@@ -82,7 +83,11 @@ MainWindow := Window {
                     height: 1px;
                     width: parent.width;
                     background: #cccccc;
-                 }
+                }
+                touch := TouchArea {
+                    width: parent.width;
+                    height: parent.height;
+                }
             }
         }
         HorizontalBox {
