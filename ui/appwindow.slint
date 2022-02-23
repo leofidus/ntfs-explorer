@@ -48,32 +48,41 @@ MainWindow := Window {
         }
 
         list-view := ListView {
-            for todo in file-model:  HorizontalLayout {
-                Rectangle {
-                    background: #193076;
-                    width: todo.selected ? parent.width : 0;
-                    height: 8px;
-                    opacity: 0.1;
+            for todo in file-model:  Rectangle {
+                height: 18px;
+                HorizontalLayout {
+                    width: parent.width - 8px;
+                    Rectangle {
+                        background: #193076;
+                        width: todo.selected ? parent.width : 0;
+                        height: 8px;
+                        opacity: 0.1;
+                    }
+                    Text {
+                        text: todo.name;
+                        color: todo.is_directory ? green : black;
+                        overflow: TextOverflow.elide;
+                        width: 30%;
+                    }
+                    Text {
+                        text: todo.attributes;
+                        color: todo.is_directory ? green : black;
+                        overflow: TextOverflow.elide;
+                        width: (parent.width * 0.7) - 70px;
+                    }
+                    Text {
+                        text: todo.size;
+                        color: todo.is_directory ? green : black;
+                        horizontal-alignment: TextHorizontalAlignment.right;
+                        width: 70px;
+                    }
                 }
-                Text {
-                    text: todo.name;
-                    color: todo.is_directory ? green : black;
-                    overflow: TextOverflow.elide;
-                    width: 30%;
-                }
-                Text {
-                    text: todo.attributes;
-                    color: todo.is_directory ? green : black;
-                    overflow: TextOverflow.elide;
-                    width: 50%;
-                }
-                Text {
-                    text: todo.size;
-                    color: todo.is_directory ? green : black;
-                    horizontal-alignment: TextHorizontalAlignment.right;
-                    width: 15%;
-                }
-                Rectangle { width: 4px; }
+                Rectangle { 
+                    y: 16px;
+                    height: 1px;
+                    width: parent.width;
+                    background: #cccccc;
+                 }
             }
         }
         HorizontalBox {
