@@ -1,14 +1,17 @@
 [package]
-name = "{{project-name}}"
+name = "ntfs-explorer"
 version = "0.1.0"
-authors = ["{{authors}}"]
-edition = "2018"
+authors = ["Jannis Froese <jannisfroese@mailbox.org>"]
+edition = "2021"
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 slint = "0.2"
+ntfs = "0.1"
+anyhow = "1.0"
+bytesize = "1.1"
 
 [build-dependencies]
 slint-build = "0.2"
