@@ -9,9 +9,6 @@ build = "build.rs"
 
 [dependencies]
 slint = "0.2"
-ntfs = "0.1"
-anyhow = "1.0"
-bytesize = "1.1"
 
 [build-dependencies]
 slint-build = "0.2"

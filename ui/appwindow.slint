@@ -4,97 +4,43 @@
 import { SpinBox, Button, CheckBox, Slider, LineEdit, ScrollView, ListView, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 
 export struct FileItem := {
-    name: string,
-    attributes: string,
-    size: string,
-    selected: bool,
-    is_directory: bool,
+    filename: string,
+}
+
+FileLine := Rectangle {
+    height: 18px;
+    property <string> filename;
+    
+    Rectangle {
+        background: touch.has-hover ? #f2f1f8 : white;
+        height: 17px;
+        animate background { duration: 50ms; easing: ease-in-out; }
+    }
+    HorizontalLayout {
+        t_filename := Text {
+            text: root.filename;
+        }
+    }
+    Rectangle { 
+        y: 16px;
+        height: 1px;
+        background: #cccccc;
+    }
+    touch := TouchArea {
+    }
 }
 
 MainWindow := Window {
     preferred-width: 400px;
     preferred-height: 600px;
-    callback todo-added(string);
-    callback remove-done();
 
     property <[FileItem]> file-model: [
-        { name: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
-        { name: "Do the Rust part", attributes: "ARCHIVE | COMPRESSED", size: "21MB", selected: true, is_directory: false },
-        // { name: "Make the C++ code", checked: false },
-        // { name: "Write some JavaScript code", checked: false },
-        // { name: "Test the application", checked: false },
-        // { name: "Ship to customer", checked: false },
-        // { name: "???", checked: false },
-        // { name: "Profit", checked: false },
     ];
 
     VerticalBox {
-        HorizontalBox {
-            text-edit := LineEdit {
-                placeholder-text: "What needs to be done?";
-                accepted(text) => {
-                    todo-added(text);
-                    self.text = "";
-                }
-            }
-            btn := Button {
-                text: "Add New Entry";
-                enabled: text-edit.text != "";
-                clicked => {
-                    todo-added(text-edit.text);
-                    text-edit.text = "";
-                }
-            }
-        }
-
         list-view := ListView {
-            for todo in file-model:  Rectangle {
-                height: 18px;
-                
-                Rectangle {
-                    background: touch.has-hover ? #f2f1f8 : white;
-                    width: parent.width;
-                    height: 17px;
-                    animate background { duration: 50ms; easing: ease-in-out; }
-                }
-                HorizontalLayout {
-                    width: parent.width - 8px;
-                    Text {
-                        text: todo.name;
-                        color: todo.is_directory ? green : black;
-                        overflow: TextOverflow.elide;
-                        width: 30%;
-                    }
-                    Text {
-                        text: todo.attributes;
-                        color: todo.is_directory ? green : black;
-                        overflow: TextOverflow.elide;
-                        width: (parent.width * 0.7) - 70px;
-                    }
-                    Text {
-                        text: todo.size;
-                        color: todo.is_directory ? green : black;
-                        horizontal-alignment: TextHorizontalAlignment.right;
-                        width: 70px;
-                    }
-                }
-                Rectangle { 
-                    y: 16px;
-                    height: 1px;
-                    width: parent.width;
-                    background: #cccccc;
-                }
-                touch := TouchArea {
-                    width: parent.width;
-                    height: parent.height;
-                }
-            }
-        }
-        HorizontalBox {
-            alignment: end;
-            Button {
-                text: "Remove Done Items";
-                clicked => { root.remove-done(); }
+            for file in file-model:  FileLine {
+                filename: file.filename;
             }
         }
     }
