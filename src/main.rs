@@ -3,7 +3,6 @@ use std::{fs::File, io::BufReader};
 use bytesize::ByteSize;
 use ntfs::{structured_values::NtfsFileNamespace, Ntfs};
 use sector_reader::SectorReader;
-use slint::Model;
 
 mod sector_reader;
 
@@ -71,6 +70,23 @@ fn main() -> anyhow::Result<()> {
     let file_model = std::rc::Rc::new(slint::VecModel::from(file_model));
 
     ui.set_file_model(file_model.into());
+
+    let properties = vec![FilePropertySection {
+        headline: "General".into(),
+        values: std::rc::Rc::new(slint::VecModel::from(vec![
+            FileProperty {
+                name: "Size".into(),
+                value: "412 kB".into(),
+            },
+            FileProperty {
+                name: "Filename".into(),
+                value: "example.txt".into(),
+            },
+        ]))
+        .into(),
+    }];
+
+    ui.set_file_property_sections(std::rc::Rc::new(slint::VecModel::from(properties)).into());
 
     // let file_model: Vec<FileItem> = ui.get_file_model().iter().collect();
 

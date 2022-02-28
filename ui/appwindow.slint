@@ -11,6 +11,17 @@ export struct FileItem := {
     is_directory: bool,
 }
 
+
+export struct FileProperty := {
+    name: string,
+    value: string,
+}
+
+export struct FilePropertySection := {
+    headline: string,
+    values: [FileProperty],
+}
+
 FileLine := Rectangle {
     height: 18px;
     property <FileItem> file;
@@ -56,7 +67,7 @@ FileLine := Rectangle {
 }
 
 MainWindow := Window {
-    preferred-width: 400px;
+    preferred-width: 600px;
     preferred-height: 600px;
     callback file-added(string);
     callback remove-done();
@@ -70,6 +81,10 @@ MainWindow := Window {
         // { name: "Ship to customer", checked: false },
         // { name: "???", checked: false },
         // { name: "Profit", checked: false },
+    ];
+
+    property <[FilePropertySection]> file-property-sections: [
+        //{ headline: "File", values: [{name:"size", value:"4GB"}]}
     ];
 
     VerticalBox {
@@ -95,6 +110,56 @@ MainWindow := Window {
             list-view := ListView {
                 for file in file-model: FileLine {
                     file: file;
+                }
+            }
+            Rectangle {
+                background: #f2f1f8;
+                width: 200px;
+                border-radius: 3px;
+                padding: 4px;
+
+                VerticalLayout { 
+                    spacing: 3px;
+                    alignment: start;
+                    Text {
+                        text: "Properties";
+                        font-weight: 900;
+                        horizontal-alignment: TextHorizontalAlignment.center;
+                    }
+                    Rectangle {
+                        height: 1px;
+                        width: parent.width;
+                        background: #cccccc;
+                    }
+                    for section in file-property-sections: VerticalLayout {
+                        //height: section.values.length * 20px + 20px;
+                        alignment: start;
+                        Text {
+                            text: section.headline;
+                            font-weight: 900;
+                            horizontal-alignment: TextHorizontalAlignment.center;
+                        }
+                        for value in section.values: Rectangle {
+                            height: 16px;
+                            Text {
+                                text: value.name;
+                                font-weight: 400;
+                                width: 70px;
+                                horizontal-alignment: TextHorizontalAlignment.right;
+                            }
+                            Text {
+                                text: value.value;
+                                font-weight: 400;
+                                x: 75px;
+                                horizontal-alignment: TextHorizontalAlignment.left;
+                            }
+                        }
+                        Rectangle {
+                            height: 1px;
+                            width: parent.width;
+                            background: #cccccc;
+                        }
+                    }
                 }
             }
         }
