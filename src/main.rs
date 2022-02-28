@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<()> {
 
         file_model.push(FileItem {
             attributes: attributes.into(),
-            name: file_name.into(),
+            filename: file_name.into(),
             selected: false,
             size: file_size.into(),
             is_directory,

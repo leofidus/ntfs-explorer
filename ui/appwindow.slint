@@ -4,22 +4,66 @@
 import { SpinBox, Button, CheckBox, Slider, LineEdit, ScrollView, ListView, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 
 export struct FileItem := {
-    name: string,
+    filename: string,
     attributes: string,
     size: string,
     selected: bool,
     is_directory: bool,
 }
 
+FileLine := Rectangle {
+    height: 18px;
+    property <FileItem> file;
+    
+    Rectangle {
+        background: touch.has-hover ? #f2f1f8 : white;
+        width: parent.width;
+        height: 17px;
+        animate background { duration: 50ms; easing: ease-in-out; }
+    }
+    HorizontalLayout {
+        width: parent.width - 16px;
+        padding-left: 8px;
+        Text {
+            text: root.file.filename;
+            color: root.file.is_directory ? green : black;
+            overflow: TextOverflow.elide;
+            width: 30%;
+        }
+        Text {
+            text: root.file.attributes;
+            color: root.file.is_directory ? green : black;
+            overflow: TextOverflow.elide;
+            width: (parent.width * 0.7) - 70px;
+        }
+        Text {
+            text: root.file.size;
+            color: root.file.is_directory ? green : black;
+            horizontal-alignment: TextHorizontalAlignment.right;
+            width: 70px;
+        }
+    }
+    Rectangle { 
+        y: 16px;
+        height: 1px;
+        width: parent.width;
+        background: #cccccc;
+    }
+    touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+    }
+}
+
 MainWindow := Window {
     preferred-width: 400px;
     preferred-height: 600px;
-    callback todo-added(string);
+    callback file-added(string);
     callback remove-done();
 
     property <[FileItem]> file-model: [
-        { name: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
-        { name: "Do the Rust part", attributes: "ARCHIVE | COMPRESSED", size: "21MB", selected: true, is_directory: false },
+        { filename: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
+        { filename: "Do the Rust part", attributes: "ARCHIVE | COMPRESSED", size: "21MB", selected: true, is_directory: false },
         // { name: "Make the C++ code", checked: false },
         // { name: "Write some JavaScript code", checked: false },
         // { name: "Test the application", checked: false },
@@ -33,7 +77,7 @@ MainWindow := Window {
             text-edit := LineEdit {
                 placeholder-text: "What needs to be done?";
                 accepted(text) => {
-                    todo-added(text);
+                    file-added(text);
                     self.text = "";
                 }
             }
@@ -41,52 +85,16 @@ MainWindow := Window {
                 text: "Add New Entry";
                 enabled: text-edit.text != "";
                 clicked => {
-                    todo-added(text-edit.text);
+                    file-added(text-edit.text);
                     text-edit.text = "";
                 }
             }
         }
 
-        list-view := ListView {
-            for todo in file-model:  Rectangle {
-                height: 18px;
-                
-                Rectangle {
-                    background: touch.has-hover ? #f2f1f8 : white;
-                    width: parent.width;
-                    height: 17px;
-                    animate background { duration: 50ms; easing: ease-in-out; }
-                }
-                HorizontalLayout {
-                    width: parent.width - 8px;
-                    Text {
-                        text: todo.name;
-                        color: todo.is_directory ? green : black;
-                        overflow: TextOverflow.elide;
-                        width: 30%;
-                    }
-                    Text {
-                        text: todo.attributes;
-                        color: todo.is_directory ? green : black;
-                        overflow: TextOverflow.elide;
-                        width: (parent.width * 0.7) - 70px;
-                    }
-                    Text {
-                        text: todo.size;
-                        color: todo.is_directory ? green : black;
-                        horizontal-alignment: TextHorizontalAlignment.right;
-                        width: 70px;
-                    }
-                }
-                Rectangle { 
-                    y: 16px;
-                    height: 1px;
-                    width: parent.width;
-                    background: #cccccc;
-                }
-                touch := TouchArea {
-                    width: parent.width;
-                    height: parent.height;
+        HorizontalBox { 
+            list-view := ListView {
+                for file in file-model: FileLine {
+                    file: file;
                 }
             }
         }
