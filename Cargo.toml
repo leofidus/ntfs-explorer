@@ -13,6 +13,7 @@ slint = { git="https://github.com/slint-ui/slint.git", default-features=false, f
 ntfs = "0.1"
 anyhow = "1.0"
 bytesize = "1.1"
+itertools = "0.10"
 
 [build-dependencies]
 slint-build = { git="https://github.com/slint-ui/slint.git" }

@@ -1753,6 +1753,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytesize",
+ "itertools",
  "ntfs",
  "slint",
  "slint-build",

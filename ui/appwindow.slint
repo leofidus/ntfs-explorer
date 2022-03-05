@@ -25,12 +25,13 @@ export struct FilePropertySection := {
 FileLine := Rectangle {
     height: 18px;
     property <FileItem> file;
+    callback enter-directory(string);
     
     Rectangle {
         background: touch.has-hover ? #f2f1f8 : white;
         width: parent.width;
         height: 17px;
-        animate background { duration: 50ms; easing: ease-in-out; }
+        // animate background { duration: 50ms; easing: ease-in-out; }
     }
     HorizontalLayout {
         width: parent.width - 16px;
@@ -63,13 +64,14 @@ FileLine := Rectangle {
     touch := TouchArea {
         width: parent.width;
         height: parent.height;
+        clicked => { if (file.is_directory) { enter-directory(file.filename) } }
     }
 }
 
 MainWindow := Window {
     preferred-width: 600px;
     preferred-height: 600px;
-    callback file-added(string);
+    callback enter-directory(string);
     callback remove-done();
 
     property <[FileItem]> file-model: [
@@ -92,7 +94,7 @@ MainWindow := Window {
             text-edit := LineEdit {
                 placeholder-text: "What needs to be done?";
                 accepted(text) => {
-                    file-added(text);
+                    // file-added(text);
                     self.text = "";
                 }
             }
@@ -100,7 +102,7 @@ MainWindow := Window {
                 text: "Add New Entry";
                 enabled: text-edit.text != "";
                 clicked => {
-                    file-added(text-edit.text);
+                    // file-added(text-edit.text);
                     text-edit.text = "";
                 }
             }
@@ -110,6 +112,7 @@ MainWindow := Window {
             list-view := ListView {
                 for file in file-model: FileLine {
                     file: file;
+                    enter-directory => { root.enter-directory(file.filename) }
                 }
             }
             Rectangle {
