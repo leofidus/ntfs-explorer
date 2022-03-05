@@ -19,6 +19,7 @@ slint::include_modules!();
 
 enum Command {
     EnterSubdir(String),
+    MoveToParent(),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -58,6 +59,13 @@ fn main() -> anyhow::Result<()> {
 
                     show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
                 }
+                Command::MoveToParent() => {
+                    if current_directory.len() > 1 {
+                        current_directory.pop();
+
+                        show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
+                    }
+                }
             }
         }
 
@@ -69,6 +77,11 @@ fn main() -> anyhow::Result<()> {
         println!("enter dir {}", dir_name);
         tx1.send(Command::EnterSubdir(dir_name.to_string()))
             .unwrap();
+    });
+
+    let tx1 = tx.clone();
+    ui.on_move_to_parent(move || {
+        tx1.send(Command::MoveToParent()).unwrap();
     });
 
     // let file_model: Vec<FileItem> = ui.get_file_model().iter().collect();
@@ -172,6 +185,7 @@ fn show_dir(
 
         ui.set_file_model(file_model.into());
         ui.set_file_property_sections(std::rc::Rc::new(slint::VecModel::from(properties)).into());
+        ui.set_scroll_y(0.0);
     });
     Ok(())
 }

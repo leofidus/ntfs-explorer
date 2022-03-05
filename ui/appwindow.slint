@@ -72,7 +72,11 @@ MainWindow := Window {
     preferred-width: 600px;
     preferred-height: 600px;
     callback enter-directory(string);
+    callback move-to-parent();
     callback remove-done();
+
+    // this allows me to scroll back up
+    property scroll-y <=> list-view.viewport-y;
 
     property <[FileItem]> file-model: [
         { filename: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
@@ -100,10 +104,11 @@ MainWindow := Window {
             }
             btn := Button {
                 text: "Add New Entry";
-                enabled: text-edit.text != "";
+                // enabled: text-edit.text != "";
                 clicked => {
                     // file-added(text-edit.text);
-                    text-edit.text = "";
+                    // text-edit.text = "";
+                    move-to-parent();
                 }
             }
         }
