@@ -65,6 +65,7 @@ FileLine := Rectangle {
         width: parent.width;
         height: parent.height;
         clicked => { if (file.is_directory) { enter-directory(file.filename) } }
+        
     }
 }
 
@@ -117,7 +118,7 @@ MainWindow := Window {
             list-view := ListView {
                 for file in file-model: FileLine {
                     file: file;
-                    enter-directory => { root.enter-directory(file.filename) }
+                    enter-directory(name) => { root.enter-directory(name) }
                 }
             }
             Rectangle {

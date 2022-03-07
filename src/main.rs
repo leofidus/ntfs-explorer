@@ -8,8 +8,8 @@ use bytesize::ByteSize;
 use itertools::Itertools;
 use ntfs::{
     indexes::NtfsFileNameIndex,
-    structured_values::{NtfsFileName, NtfsFileNamespace},
-    Ntfs, NtfsFile,
+    structured_values::{NtfsFileName, NtfsFileNamespace, NtfsObjectId, NtfsStandardInformation},
+    Ntfs, NtfsAttributeType, NtfsFile,
 };
 use sector_reader::SectorReader;
 
@@ -151,6 +151,12 @@ fn show_dir(
         let is_directory = filename.is_directory();
         let filename_str = filename.name().to_string_lossy();
 
+        println!(
+            "{}: {:#?}",
+            filename_str,
+            get_file_attributes(fs, ntfs, &file, parent_record_number)
+        );
+
         file_model.push(FileItem {
             attributes: attributes.into(),
             filename: filename_str.into(),
@@ -190,8 +196,112 @@ fn show_dir(
     Ok(())
 }
 
+#[derive(Debug)]
+struct FileAttributes {
+    filenames: Vec<(NtfsFileNamespace, String, NtfsFileName)>,
+    hard_links: Vec<(NtfsFileNamespace, String, NtfsFileName)>,
+    standard_informations: Vec<NtfsStandardInformation>,
+    object_ids: Vec<NtfsObjectId>,
+}
+
+fn get_file_attributes<T>(
+    fs: &mut T,
+    ntfs: &Ntfs,
+    file: &NtfsFile,
+    parent_dir: u64,
+) -> anyhow::Result<FileAttributes>
+where
+    T: Read + Seek,
+{
+    let mut standard_informations = vec![];
+    let mut filenames = vec![];
+    let mut hard_links = vec![];
+    let mut object_ids = vec![];
+    let own_record_number = file.file_record_number();
+    let mut attributes = file.attributes();
+    while let Some(attr) = attributes.next(fs) {
+        if let Ok(attr) = attr {
+            let attr = attr.to_attribute();
+            // dbg!(attr.ty()?);
+            // dbg!(attr.position());
+            // dbg!(best_file_name(fs, file, parent_dir)?
+            //     .name()
+            //     .to_string_lossy());
+            if attr.ty().is_err() {
+                eprint!("unknown attribute type: {:?}", attr.name());
+            }
+            match attr.ty().unwrap() {
+                NtfsAttributeType::StandardInformation => {
+                    let data: NtfsStandardInformation = attr.structured_value(fs).unwrap();
+                    standard_informations.push(data);
+                }
+                NtfsAttributeType::AttributeList => continue,
+                NtfsAttributeType::FileName => {
+                    let data: NtfsFileName = attr.structured_value(fs).unwrap();
+                    if data.parent_directory_reference().file_record_number() == parent_dir {
+                        filenames.push((data.namespace(), data.name().to_string_lossy(), data));
+                    } else {
+                        let ns = data.namespace();
+                        let mut path = vec![data.name().to_string_lossy()];
+                        let mut parent = data.parent_directory_reference();
+                        while parent.file_record_number() != own_record_number {
+                            let parent_dir = parent.to_file(ntfs, fs).unwrap();
+                            let ntfs_file_name: Option<NtfsFileName> =
+                                match parent_dir.name(fs, Some(ns), None) {
+                                    Some(name) => Some(name.unwrap()),
+                                    None => match parent_dir.name(fs, None, None) {
+                                        Some(name) => Some(name.unwrap()),
+                                        None => None,
+                                    },
+                                };
+                            match ntfs_file_name {
+                                Some(name) => {
+                                    path.push(name.name().to_string_lossy());
+                                    parent = name.parent_directory_reference();
+                                }
+                                None => {
+                                    path.push("[[no file name found]]".to_owned());
+                                    break;
+                                }
+                            };
+                        }
+                        path.reverse();
+                        let path = path.join("\\");
+                        hard_links.push((data.namespace(), path, data));
+                    }
+                }
+                NtfsAttributeType::ObjectId => {
+                    let data: NtfsObjectId = attr.structured_value(fs).unwrap();
+                    object_ids.push(data);
+                }
+                _ => continue,
+                NtfsAttributeType::SecurityDescriptor => todo!(),
+                NtfsAttributeType::VolumeName => todo!(),
+                NtfsAttributeType::VolumeInformation => todo!(),
+                NtfsAttributeType::Data => todo!(),
+                NtfsAttributeType::IndexRoot => todo!(),
+                NtfsAttributeType::IndexAllocation => todo!(),
+                NtfsAttributeType::Bitmap => todo!(),
+                NtfsAttributeType::ReparsePoint => todo!(),
+                NtfsAttributeType::EAInformation => todo!(),
+                NtfsAttributeType::EA => todo!(),
+                NtfsAttributeType::PropertySet => todo!(),
+                NtfsAttributeType::LoggedUtilityStream => todo!(),
+                NtfsAttributeType::End => todo!(),
+            }
+        }
+    }
+
+    Ok(FileAttributes {
+        filenames,
+        hard_links,
+        standard_informations,
+        object_ids,
+    })
+}
+
 fn best_file_name<T>(
-    fs: &mut BufReader<T>,
+    fs: &mut T,
     file: &NtfsFile,
     parent_record_number: u64,
 ) -> anyhow::Result<NtfsFileName>
