@@ -244,18 +244,19 @@ where
                         let ns = data.namespace();
                         let mut path = vec![data.name().to_string_lossy()];
                         let mut parent = data.parent_directory_reference();
-                        while parent.file_record_number() != own_record_number {
+                        let mut current_file_record_number = own_record_number;
+                        while parent.file_record_number() != current_file_record_number {
                             let parent_dir = parent.to_file(ntfs, fs).unwrap();
                             let ntfs_file_name: Option<NtfsFileName> =
                                 match parent_dir.name(fs, Some(ns), None) {
                                     Some(name) => Some(name.unwrap()),
-                                    None => match parent_dir.name(fs, None, None) {
-                                        Some(name) => Some(name.unwrap()),
-                                        None => None,
-                                    },
+                                    None => {
+                                        parent_dir.name(fs, None, None).map(|name| name.unwrap())
+                                    }
                                 };
                             match ntfs_file_name {
                                 Some(name) => {
+                                    current_file_record_number = parent_dir.file_record_number();
                                     path.push(name.name().to_string_lossy());
                                     parent = name.parent_directory_reference();
                                 }
@@ -266,7 +267,7 @@ where
                             };
                         }
                         path.reverse();
-                        let path = path.join("\\");
+                        let path = path.join(r"\");
                         hard_links.push((data.namespace(), path, data));
                     }
                 }
