@@ -9,11 +9,16 @@ license = "MIT OR Apache-2.0 OR GPL-3.0-only"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = { git="https://github.com/slint-ui/slint.git", default-features=false, features=["compat-0-2-0", "std", "backend-gl-all"] }
-ntfs = "0.1"
+slint = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = [
+    "compat-0-2-0",
+    "std",
+    "backend-gl-all",
+] }
+ntfs = { version = "0.1", features = ["chrono"] }
 anyhow = "1.0"
 bytesize = "1.1"
 itertools = "0.10"
+chrono = "0.4"
 
 [build-dependencies]
-slint-build = { git="https://github.com/slint-ui/slint.git" }
+slint-build = { git = "https://github.com/slint-ui/slint.git" }

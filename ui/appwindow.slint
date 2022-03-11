@@ -4,6 +4,7 @@
 import { SpinBox, Button, CheckBox, Slider, LineEdit, ScrollView, ListView, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 
 export struct FileItem := {
+    id: int,
     filename: string,
     attributes: string,
     size: string,
@@ -22,15 +23,23 @@ export struct FilePropertySection := {
     values: [FileProperty],
 }
 
+global State := {
+    property<int> highlighted_file: 0;
+}
+
 FileLine := Rectangle {
     height: 18px;
     property <FileItem> file;
     callback enter-directory(string);
+    callback on-hover(bool);
     
     Rectangle {
-        background: touch.has-hover ? #f2f1f8 : white;
+        callback hover-workaround(bool) -> color;
+        hover-workaround(has-hover) => { root.on-hover(has-hover); has-hover ? #f2f1f8 : white}
+        background: hover-workaround(touch.has-hover);
         width: parent.width;
         height: 17px;
+        
         // animate background { duration: 50ms; easing: ease-in-out; }
     }
     HorizontalLayout {
@@ -75,13 +84,14 @@ MainWindow := Window {
     callback enter-directory(string);
     callback move-to-parent();
     callback remove-done();
+    // callback show-details(int);
 
     // this allows me to scroll back up
     property scroll-y <=> list-view.viewport-y;
 
     property <[FileItem]> file-model: [
-        { filename: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
-        { filename: "Do the Rust part", attributes: "ARCHIVE | COMPRESSED", size: "21MB", selected: true, is_directory: false },
+        { id: 0, filename: "Implement the .slint file", attributes: "ARCHIVE | COMPRESSED", size: "1MB", selected: false, is_directory: true  },
+        { id: 1, filename: "Do the Rust part", attributes: "ARCHIVE | COMPRESSED", size: "21MB", selected: true, is_directory: false },
         // { name: "Make the C++ code", checked: false },
         // { name: "Write some JavaScript code", checked: false },
         // { name: "Test the application", checked: false },
@@ -89,6 +99,7 @@ MainWindow := Window {
         // { name: "???", checked: false },
         // { name: "Profit", checked: false },
     ];
+    property <[[FilePropertySection]]> file-properties: [];
 
     property <[FilePropertySection]> file-property-sections: [
         //{ headline: "File", values: [{name:"size", value:"4GB"}]}
@@ -102,6 +113,7 @@ MainWindow := Window {
                     // file-added(text);
                     self.text = "";
                 }
+                text: file-model[State.highlighted-file].filename;
             }
             btn := Button {
                 text: "Add New Entry";
@@ -119,6 +131,11 @@ MainWindow := Window {
                 for file in file-model: FileLine {
                     file: file;
                     enter-directory(name) => { root.enter-directory(name) }
+                    on-hover(has-hover) => { if (has-hover) {
+                        State.highlighted-file = file.id;
+                        root.file-property-sections = file-properties[file.id];
+                        // root.show-details(file.id)
+                    }}
                 }
             }
             Rectangle {
