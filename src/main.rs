@@ -116,12 +116,15 @@ struct StringFilePropertySection {
     values: Vec<StringFileProperty>,
 }
 
-fn show_dir(
+fn show_dir<T>(
     current_directory: &[ntfs::NtfsFile],
-    fs: &mut BufReader<SectorReader<File>>,
+    fs: &mut T,
     ntfs: &Ntfs,
     ui: &slint::Weak<MainWindow>,
-) -> Result<(), anyhow::Error> {
+) -> Result<(), anyhow::Error>
+where
+    T: Read + Seek,
+{
     let dir = current_directory.last().unwrap();
     let index = dir.directory_index(fs)?;
     let mut iter = index.entries();
@@ -260,10 +263,25 @@ fn show_dir(
         for standard_information in properties.standard_informations {
             string_properties.push(StringFilePropertySection {
                 headline: "General".into(),
-                values: vec![StringFileProperty {
+                values: vec![
+                    StringFileProperty {
+                        name: "Creation".into(),
+                        value: DateTime::from(standard_information.creation_time()).to_string(),
+                    },
+                    StringFileProperty {
                     name: "Last Access".into(),
                     value: DateTime::from(standard_information.access_time()).to_string(),
-                }],
+                    },
+                    StringFileProperty {
+                        name: "Modification".into(),
+                        value: DateTime::from(standard_information.modification_time()).to_string(),
+                    },
+                    StringFileProperty {
+                        name: "MFT Record Modification".into(),
+                        value: DateTime::from(standard_information.mft_record_modification_time())
+                            .to_string(),
+                    },
+                ],
             })
         }
         properties_model[i] = string_properties;

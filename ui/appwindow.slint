@@ -79,7 +79,7 @@ FileLine := Rectangle {
 }
 
 MainWindow := Window {
-    preferred-width: 600px;
+    preferred-width: 800px;
     preferred-height: 600px;
     callback enter-directory(string);
     callback move-to-parent();
@@ -140,7 +140,7 @@ MainWindow := Window {
             }
             Rectangle {
                 background: #f2f1f8;
-                width: 200px;
+                width: 400px;
                 border-radius: 3px;
                 padding: 4px;
 
@@ -170,13 +170,13 @@ MainWindow := Window {
                             Text {
                                 text: value.name;
                                 font-weight: 400;
-                                width: 70px;
+                                width: 140px;
                                 horizontal-alignment: TextHorizontalAlignment.right;
                             }
                             Text {
                                 text: value.value;
                                 font-weight: 400;
-                                x: 75px;
+                                x: 145px;
                                 horizontal-alignment: TextHorizontalAlignment.left;
                             }
                         }
