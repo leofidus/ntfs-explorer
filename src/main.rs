@@ -10,7 +10,7 @@ use itertools::{enumerate, Itertools};
 use ntfs::{
     indexes::NtfsFileNameIndex,
     structured_values::{NtfsFileName, NtfsFileNamespace, NtfsObjectId, NtfsStandardInformation},
-    Ntfs, NtfsAttributeType, NtfsFile,
+    Ntfs, NtfsAttributeType, NtfsFile, NtfsTime,
 };
 use sector_reader::SectorReader;
 
@@ -28,51 +28,8 @@ fn main() -> anyhow::Result<()> {
 
     let (tx, rx) = mpsc::channel();
     let ui_handle = ui.as_weak();
-    std::thread::spawn(move || -> anyhow::Result<()> {
-        //let f = File::open(r"\\.\C:")?;
-        let f = File::open(
-            r"C:\Users\JannisFroese\Downloads\dd-0.6beta3\links-quota-defaultBlocks-8GB.img",
-        )?;
-        let sr = SectorReader::new(f, 512)?;
-        let mut fs = BufReader::new(sr);
-        let mut ntfs = Ntfs::new(&mut fs)?;
-        ntfs.read_upcase_table(&mut fs)?;
-        let mut current_directory = vec![ntfs.root_directory(&mut fs)?];
-
-        show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
-
-        loop {
-            match rx.recv().unwrap() {
-                Command::EnterSubdir(dir_name) => {
-                    let index = current_directory
-                        .last()
-                        .unwrap()
-                        .directory_index(&mut fs)
-                        .unwrap();
-                    let mut finder = index.finder();
-                    let maybe_entry =
-                        NtfsFileNameIndex::find(&mut finder, &ntfs, &mut fs, dir_name.as_str());
-
-                    if maybe_entry.is_none() {
-                        continue;
-                    }
-                    let entry = maybe_entry.unwrap();
-                    let file = entry.unwrap().to_file(&ntfs, &mut fs).unwrap();
-                    current_directory.push(file);
-
-                    show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
-                }
-                Command::MoveToParent() => {
-                    if current_directory.len() > 1 {
-                        current_directory.pop();
-
-                        show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
-                    }
-                }
-            }
-        }
-
-        // Ok(())
+    std::thread::spawn(move || -> () {
+        worker_thread(ui_handle, rx).unwrap();
     });
 
     let tx1 = tx.clone();
@@ -102,6 +59,52 @@ fn main() -> anyhow::Result<()> {
     ui.run();
 
     Ok(())
+}
+
+fn worker_thread(
+    ui_handle: slint::Weak<MainWindow>,
+    rx: mpsc::Receiver<Command>,
+) -> anyhow::Result<()> {
+    //let f = File::open(r"\\.\C:")?;
+    let f = File::open(r"C:\Users\JannisFroese\Downloads\dd\links-quota-defaultBlocks-8GB.img")?;
+    let sr = SectorReader::new(f, 512)?;
+    let mut fs = BufReader::new(sr);
+    // let mut fs =
+    //     ZstdReader::new(r"C:\Users\JannisFroese\Downloads\dd\links-quota-defaultBlocks-8GB.img")?;
+    let mut ntfs = Ntfs::new(&mut fs)?;
+    ntfs.read_upcase_table(&mut fs)?;
+    let mut current_directory = vec![ntfs.root_directory(&mut fs)?];
+    show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
+    loop {
+        match rx.recv().unwrap() {
+            Command::EnterSubdir(dir_name) => {
+                let index = current_directory
+                    .last()
+                    .unwrap()
+                    .directory_index(&mut fs)
+                    .unwrap();
+                let mut finder = index.finder();
+                let maybe_entry =
+                    NtfsFileNameIndex::find(&mut finder, &ntfs, &mut fs, dir_name.as_str());
+
+                if maybe_entry.is_none() {
+                    continue;
+                }
+                let entry = maybe_entry.unwrap();
+                let file = entry.unwrap().to_file(&ntfs, &mut fs).unwrap();
+                current_directory.push(file);
+
+                show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
+            }
+            Command::MoveToParent() => {
+                if current_directory.len() > 1 {
+                    current_directory.pop();
+
+                    show_dir(&current_directory, &mut fs, &ntfs, &ui_handle)?;
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -266,20 +269,19 @@ where
                 values: vec![
                     StringFileProperty {
                         name: "Creation".into(),
-                        value: DateTime::from(standard_information.creation_time()).to_string(),
+                        value: format_time(standard_information.creation_time()),
                     },
                     StringFileProperty {
-                    name: "Last Access".into(),
-                    value: DateTime::from(standard_information.access_time()).to_string(),
+                        name: "Last Access".into(),
+                        value: format_time(standard_information.access_time()),
                     },
                     StringFileProperty {
                         name: "Modification".into(),
-                        value: DateTime::from(standard_information.modification_time()).to_string(),
+                        value: format_time(standard_information.modification_time()),
                     },
                     StringFileProperty {
                         name: "MFT Record Modification".into(),
-                        value: DateTime::from(standard_information.mft_record_modification_time())
-                            .to_string(),
+                        value: format_time(standard_information.mft_record_modification_time()),
                     },
                 ],
             })
@@ -345,11 +347,11 @@ where
     while let Some(attr) = attributes.next(fs) {
         if let Ok(attr) = attr {
             let attr = attr.to_attribute();
-            // dbg!(attr.ty()?);
             // dbg!(attr.position());
             dbg!(best_file_name(fs, file, parent_dir)?
                 .name()
                 .to_string_lossy());
+            dbg!(attr.ty()?);
             if attr.ty().is_err() {
                 eprint!("unknown attribute type: {:?}", attr.name());
             }
@@ -453,4 +455,8 @@ where
         "Found no FileName attribute for File Record {:#x}",
         file.file_record_number()
     )
+}
+
+fn format_time(time: NtfsTime) -> String {
+    DateTime::from(time).format("%Y-%m-%d %H:%M:%S").to_string()
 }
